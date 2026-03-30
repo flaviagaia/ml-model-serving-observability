@@ -8,7 +8,8 @@ The repository combines:
 - a `FastAPI` inference server;
 - native Prometheus instrumentation;
 - a pre-provisioned Grafana dashboard;
-- a local development stack via `docker compose`.
+- a local development stack via `docker compose`;
+- native observability interfaces through `Prometheus` and `Grafana`.
 
 ## Problem Statement
 
@@ -59,10 +60,10 @@ The stack is composed of three deployable runtime units:
 
 - model training and artifact persistence in [src/model_training.py](src/model_training.py)
 - instrumented serving layer in [src/serving.py](src/serving.py)
-- technical inspection UI in [app.py](app.py)
 - Docker image in [Dockerfile](Dockerfile)
 - local observability stack in [docker-compose.yml](docker-compose.yml)
 - Prometheus scrape config in [prometheus/prometheus.yml](prometheus/prometheus.yml)
+- Docker-specific Prometheus config in [prometheus/prometheus.docker.yml](prometheus/prometheus.docker.yml)
 - provisioned Grafana datasource and dashboard under [grafana](grafana)
 - automated tests in [tests/test_serving.py](tests/test_serving.py)
 
@@ -111,7 +112,6 @@ This mode is useful for validating end-to-end telemetry and dashboard provisioni
 - `Docker`
 - `docker compose`
 - `unittest`
-- `Streamlit`
 
 ## Data and Artifact Lifecycle
 
@@ -363,19 +363,14 @@ The current implementation explicitly handles or exposes:
 - error counting through Prometheus labels;
 - latency observation on both success and failure paths.
 
-## Streamlit Interface
+## Native Interfaces
 
-The technical app in [app.py](app.py) shows:
+This project is intentionally centered on the native interfaces of the observability stack:
 
-- model training metrics;
-- example payloads for `/predict`;
-- instrumentation inventory for Prometheus scraping.
+- `Prometheus` for direct metric inspection, target health, and `PromQL` queries;
+- `Grafana` for dashboards, time-series exploration, and operational visualization.
 
-The Streamlit layer is not the primary serving surface. It is an engineering inspection console for:
-
-- checking training outputs;
-- validating payload shape;
-- communicating observability coverage to reviewers.
+This makes the repository closer to real platform and SRE workflows, where teams usually inspect the native tools rather than a custom demo UI.
 
 ## Local Execution
 
@@ -387,7 +382,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python3 main.py
 uvicorn src.serving:app --host 0.0.0.0 --port 8000
-streamlit run app.py
 ```
 
 ### Docker mode
@@ -450,6 +444,17 @@ From an SRE/MLOps perspective, this repository demonstrates a few important desi
 - percentile-friendly latency measurement uses a histogram, not a gauge;
 - dashboard provisioning is version-controlled;
 - the stack can be reproduced locally with no manual Grafana configuration.
+
+## Prometheus Configuration Modes
+
+The repository includes two scrape configurations:
+
+- [prometheus/prometheus.yml](prometheus/prometheus.yml)
+  for native local execution, targeting `localhost:8000`
+- [prometheus/prometheus.docker.yml](prometheus/prometheus.docker.yml)
+  for containerized execution, targeting `model-api:8000`
+
+This split keeps both execution modes explicit and avoids mixing host-network and container-network assumptions in the same file.
 
 ## Production Evolution Path
 

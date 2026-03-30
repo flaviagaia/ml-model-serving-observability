@@ -5,4 +5,4 @@ scrape_configs:
   - job_name: "model-api"
     metrics_path: /metrics
     static_configs:
-      - targets: ["localhost:8000"]
+      - targets: ["model-api:8000"]
