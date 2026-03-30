@@ -7,9 +7,12 @@ from threading import Lock
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
+from starlette.requests import Request
 from starlette.responses import Response
+from fastapi.responses import JSONResponse
 
 from .model_training import ARTIFACTS_DIR, train_and_persist_model
 
@@ -80,6 +83,13 @@ app = FastAPI(title="ML Model Serving Observability", version="1.0.0")
 @app.on_event("startup")
 def startup_event() -> None:
     _load_model()
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    endpoint = request.url.path
+    REQUEST_COUNT.labels(endpoint=endpoint, status="validation_error").inc()
+    return JSONResponse(status_code=422, content={"detail": exc.errors(), "error_type": "validation_error"})
 
 
 @app.get("/health")

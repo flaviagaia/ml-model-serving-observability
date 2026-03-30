@@ -60,6 +60,7 @@ The stack is composed of three deployable runtime units:
 
 - model training and artifact persistence in [src/model_training.py](src/model_training.py)
 - instrumented serving layer in [src/serving.py](src/serving.py)
+- demo traffic generator in [scripts/generate_demo_traffic.py](scripts/generate_demo_traffic.py)
 - Docker image in [Dockerfile](Dockerfile)
 - local observability stack in [docker-compose.yml](docker-compose.yml)
 - Prometheus scrape config in [prometheus/prometheus.yml](prometheus/prometheus.yml)
@@ -247,6 +248,8 @@ The API exports the following custom metrics:
 - `model_metadata`
   static metadata for the currently loaded model
 
+The API also records `validation_error` requests for malformed payloads, which is useful for demonstrating non-success traffic in the dashboard.
+
 ### Metric semantics
 
 #### `model_inference_requests_total{endpoint,status}`
@@ -311,12 +314,32 @@ sum by (predicted_class) (increase(model_predictions_total[15m]))
 
 The provisioned dashboard includes:
 
-- inference throughput
-- `p95` latency
+- total successful inferences
+- average inference latency in microseconds
 - predicted class distribution
-- error rate
+- total non-success requests
+- request status breakdown
+- prediction rate by class
 
 This provides a compact but realistic operational lens for a model-serving API.
+
+## Native Interfaces
+
+### Prometheus UI
+
+The Prometheus UI is used for:
+
+- direct target inspection;
+- `PromQL` exploration;
+- metric-level validation before building dashboards.
+
+![Prometheus interface](assets/prometheus_ml.jpg)
+
+### Grafana UI
+
+The Grafana dashboard provides the operational summary layer on top of Prometheus, showing the serving behavior through a native observability interface.
+
+![Grafana dashboard](assets/grafana_ml.jpg)
 
 ## Grafana Provisioning Model
 
@@ -422,6 +445,24 @@ curl -X POST http://localhost:8000/predict \
     "proline": 1065.0
   }'
 ```
+
+## Demo Traffic Generation
+
+To populate Prometheus and Grafana with more realistic low-volume data, the repository includes a traffic generator that sends:
+
+- valid requests sampled from multiple ground-truth classes;
+- malformed requests to create validation-error telemetry.
+
+```bash
+source .venv/bin/activate
+python scripts/generate_demo_traffic.py --requests 60 --invalid-requests 6
+```
+
+This makes the dashboard more informative than a single repeated payload, because it produces:
+
+- multiple predicted classes;
+- non-success request counts;
+- more realistic latency samples over time.
 
 ## Tests
 

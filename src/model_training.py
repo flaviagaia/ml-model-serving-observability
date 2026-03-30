@@ -22,6 +22,7 @@ class TrainingArtifacts:
     model_path: Path
     metrics_path: Path
     sample_path: Path
+    sample_batch_path: Path
     metrics: dict
 
 
@@ -61,16 +62,26 @@ def train_and_persist_model() -> TrainingArtifacts:
     model_path = ARTIFACTS_DIR / "wine_classifier.joblib"
     metrics_path = ARTIFACTS_DIR / "training_metrics.csv"
     sample_path = ARTIFACTS_DIR / "sample_payload.csv"
+    sample_batch_path = ARTIFACTS_DIR / "sample_payloads.csv"
     report_path = ARTIFACTS_DIR / "classification_report.txt"
 
     joblib.dump(model, model_path)
     pd.DataFrame([metrics]).to_csv(metrics_path, index=False)
     X.head(5).assign(target=y.head(5).values).to_csv(sample_path, index=False)
+    sample_batch = (
+        X.assign(target=y.values)
+        .groupby("target", group_keys=False)
+        .head(8)
+        .reset_index(drop=True)
+        .rename(columns={"od280/od315_of_diluted_wines": "od280_od315_of_diluted_wines"})
+    )
+    sample_batch.to_csv(sample_batch_path, index=False)
     report_path.write_text(classification_report(y_test, y_pred), encoding="utf-8")
 
     return TrainingArtifacts(
         model_path=model_path,
         metrics_path=metrics_path,
         sample_path=sample_path,
+        sample_batch_path=sample_batch_path,
         metrics=metrics,
     )

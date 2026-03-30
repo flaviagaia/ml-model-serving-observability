@@ -13,7 +13,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -26,12 +26,12 @@
       "id": 1,
       "targets": [
         {
-          "expr": "sum(rate(model_inference_requests_total{status=\"success\"}[5m]))",
+          "expr": "sum(model_inference_requests_total{status=\"success\"})",
           "refId": "A"
         }
       ],
-      "title": "Inference Throughput",
-      "type": "timeseries"
+      "title": "Total Successful Inferences",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -40,7 +40,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "µs",
+          "decimals": 1
         },
         "overrides": []
       },
@@ -53,12 +54,12 @@
       "id": 2,
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(model_inference_latency_seconds_bucket[5m])) by (le))",
+          "expr": "1000000 * sum(increase(model_inference_latency_seconds_sum[$__range])) / clamp_min(sum(increase(model_inference_latency_seconds_count[$__range])), 1)",
           "refId": "A"
         }
       ],
-      "title": "p95 Inference Latency",
-      "type": "timeseries"
+      "title": "Average Inference Latency",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -78,7 +79,7 @@
       "id": 3,
       "targets": [
         {
-          "expr": "sum by (predicted_class) (increase(model_predictions_total[15m]))",
+          "expr": "sum by (predicted_class) (model_predictions_total)",
           "refId": "A"
         }
       ],
@@ -92,7 +93,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -105,11 +106,66 @@
       "id": 4,
       "targets": [
         {
-          "expr": "sum(rate(model_inference_requests_total{status=\"error\"}[5m])) / clamp_min(sum(rate(model_inference_requests_total[5m])), 0.0001)",
+          "expr": "sum(model_inference_requests_total{status!=\"success\"})",
           "refId": "A"
         }
       ],
-      "title": "Error Rate",
+      "title": "Total Non-Success Requests",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum by (status) (model_inference_requests_total)",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Status Breakdown",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 3
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "sum by (predicted_class) (rate(model_predictions_total[$__rate_interval]))",
+          "refId": "A"
+        }
+      ],
+      "title": "Prediction Rate by Class",
       "type": "timeseries"
     }
   ],
