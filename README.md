@@ -65,7 +65,7 @@ flowchart LR
 
 - `Docker`
 - `docker compose`
-- `pytest`
+- `unittest`
 - `Streamlit`
 
 ## Modeling Approach
@@ -239,7 +239,7 @@ curl -X POST http://localhost:8000/predict \
 ## Tests
 
 ```bash
-python3 -m pytest -q
+python3 -m unittest discover -s tests -v
 ```
 
 The tests cover:

@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from src.model_training import ARTIFACTS_DIR, train_and_persist_model
+from src.model_training import train_and_persist_model
 
 
 st.set_page_config(page_title="ML Model Serving Observability", page_icon="📈", layout="wide")
