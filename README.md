@@ -386,8 +386,6 @@ The current implementation explicitly handles or exposes:
 - error counting through Prometheus labels;
 - latency observation on both success and failure paths.
 
-## Native Interfaces
-
 This project is intentionally centered on the native interfaces of the observability stack:
 
 - `Prometheus` for direct metric inspection, target health, and `PromQL` queries;
